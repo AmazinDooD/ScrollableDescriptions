@@ -1,0 +1,11 @@
+{
+    "id": "ScrDesc",
+    "name": "Scrollable Descriptions",
+    "author": ["AmazinDooD"],
+    "description": "Allows you to scroll in descriptions of cards. Keybinds are the arrow keys to move the hover popup, as well as Home to return to its original position. Thanks for playing!",
+    "prefix": "scr",
+    "main_file": "scrollabledescriptions.lua",
+    "version": "1.0.0",
+    "badge_colour": "B82322",
+    "display_name": "Scrollable Descriptions"
+}
