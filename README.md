@@ -1,5 +1,5 @@
 ## Has this ever happened to you?
-<img width="332" height="202" alt="An image of a description of a Joker in Balatro, but some of the text is cut off by the bottom of the screen." src="https://github.com/user-attachments/assets/ae950d5b-7a30-470d-b766-7e94e99b2627" />  
+<img width="332" height="202" alt="An image of a description of a Joker in Balatro, but some of the text is cut off by the bottom of the screen." src="https://github.com/user-attachments/assets/ae950d5b-7a30-470d-b766-7e94e99b2627" /><br/>
 You want to play a Balatro mod, but the description of a card is too long to fit on your screen!<br/>
 Well that's exactly what happened to me, and that prompted me to make a mod to fix it.<br/>
 And after _a long time_, I finished it!<br/>
