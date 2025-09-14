@@ -1,5 +1,3 @@
-dp = dp or { hovered = nil }
-
 local scr = SMODS.current_mod
 
 local ahp = Card.align_h_popup
@@ -102,4 +100,5 @@ SMODS.Atlas {
     path = "modicon.png",
     px = 34,
     py = 34
+
 }
