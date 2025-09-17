@@ -220,7 +220,7 @@ SMODS.Keybind {
 }
 
 SMODS.Keybind {
-    key_pressed = "down",
+    key_pressed = scr.config.down_keybind:lower(),
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
@@ -229,7 +229,7 @@ SMODS.Keybind {
 }
 
 SMODS.Keybind {
-    key_pressed = "left",
+    key_pressed = scr.config.left_keybind:lower(),
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
@@ -238,7 +238,7 @@ SMODS.Keybind {
 }
 
 SMODS.Keybind {
-    key_pressed = "right",
+    key_pressed = scr.config.right_keybind:lower(),
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
@@ -247,7 +247,7 @@ SMODS.Keybind {
 }
 
 SMODS.Keybind {
-    key_pressed = "home",
+    key_pressed = scr.config.home_keybind:lower(),
     action = function(self)
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
         if hovered then hovered.scr = {x=0,y=0} end
