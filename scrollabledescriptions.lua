@@ -27,7 +27,7 @@ end
 ---@param dir table
 function move_popup(card, dir)
     if not card or not dir then return end
-    if not card.scr then card.scr = card.config.h_popup_config.offset and card.config.h_popup_config.offset or {x=0,y=0} end
+    if not card.scr then card.scr = (card.config.h_popup_config and card.config.h_popup_config.offset) and card.config.h_popup_config.offset or {x=0,y=0} end
     card.scr.x = card.scr.x + dir.x
     card.scr.y = card.scr.y + dir.y
 end
@@ -260,3 +260,4 @@ SMODS.Atlas {
     px = 34,
     py = 34
 }
+
