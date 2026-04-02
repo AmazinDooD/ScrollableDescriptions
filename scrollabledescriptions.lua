@@ -1,5 +1,5 @@
 scr = SMODS.current_mod
-SCR = {mod = scr, requires_restart = "", easing = "insine", ease_delay = 0.1}
+SCR = {mod = scr, requires_restart = "", easing = "quad", ease_delay = 0.1}
 
 SCR.important = SMODS.Gradient{
     key = "important",
