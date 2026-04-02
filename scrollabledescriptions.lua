@@ -1,5 +1,5 @@
 scr = SMODS.current_mod
-SCR = {mod = scr, requires_restart = ""}
+SCR = {mod = scr, requires_restart = "", easing = "insine", ease_delay = 0.1}
 
 SCR.important = SMODS.Gradient{
     key = "important",
@@ -9,6 +9,16 @@ SCR.important = SMODS.Gradient{
     },
     cycle = 0.5
 }
+
+local event_hook = EventManager.add_event
+function EventManager:add_event(...)
+    if not self.queues.scr_x or not self.queues.scr_y then
+        -- these two extra event queues are added in order to allow for smoother movement without being interrupted by vanilla processes or other mods
+        self.queues.scr_x = {}
+        self.queues.scr_y = {}
+    end
+    event_hook(self, ...)
+end
 
 if not _R then _R = SMODS.restart_game end
 
@@ -28,8 +38,32 @@ end
 function move_popup(card, dir)
     if not card or not dir then return end
     if not card.scr then card.scr = (card.config.h_popup_config and card.config.h_popup_config.offset) and card.config.h_popup_config.offset or {x=0,y=0} end
-    card.scr.x = card.scr.x + dir.x
-    card.scr.y = card.scr.y + dir.y
+
+    if dir.x ~= 0 then
+        G.E_MANAGER:add_event(Event({
+        trigger = 'ease',
+        ease = SCR.easing, --easing type
+        ref_table = card.scr,
+        ref_value = "x",
+        ease_to = card.scr.x+dir.x, --end value
+        delay = SCR.ease_delay, --time taken
+        timer = "REAL",
+        func = (function(t) return t end),
+        }), "scr_x")
+    end
+
+    if dir.y ~= 0 then
+        G.E_MANAGER:add_event(Event({
+            trigger = 'ease',
+            ease = SCR.easing, --easing type
+            ref_table = card.scr,
+            ref_value = "y",
+            ease_to = card.scr.y+dir.y, --end value
+            delay = SCR.ease_delay, --time taken
+            timer = "REAL",
+            func = (function(t) return t end),
+        }), "scr_y")
+    end
 end
 
 function keybind_config_menu(key)
@@ -77,11 +111,6 @@ function keybind_config_menu(key)
     }
 end
 
-function G.FUNCS.scr_switch_move_distance(arg)
-    scr.config.move_distance = arg.to_key
-    SMODS.save_mod_config(scr)
-end
-
 function G.FUNCS.scr_up_keybind(arg)
     G.FUNCS.overlay_menu(keybind_config_menu("Up"))
 end
@@ -113,100 +142,74 @@ function G.FUNCS.scr_go_back()
 end
 
 function scr.config_tab()
-    local config_nodes =
-    {n=G.UIT.ROOT, config = {align = "cm", colour = G.C.L_BLACK, minw = 4, minh = 4}, nodes = {
-        {n = G.UIT.C, config = {align = "cm"}, nodes = {}}
-    }}
-    config_nodes.nodes[1].nodes[1] = create_option_cycle{
+    local slider = create_slider{
         label = "Move Distance",
         w = 6.3,
         scale = 0.9,
-        options = {
-            "0.1",
-            "0.2",
-            "0.3",
-            "0.4",
-            "0.5",
-            "0.6",
-            "0.7",
-            "0.8",
-            "0.9",
-            "1.0"
-        },
-        opt_callback = "scr_switch_move_distance",
-        current_option = scr.config.move_distance
+        ref_table = scr.config,
+        ref_value = "move_distance",
+        min = 0,
+        max = 2,
+        decimal_places = 1
     }
 
-    config_nodes.nodes[1].nodes[2] = 
-    {n = G.UIT.R, config = {align = "cm", colour = G.C.CLEAR}, nodes = {
+    local keybinds_text = {n = G.UIT.R, config = {align = "cm", colour = G.C.CLEAR, minh = 0.65}, nodes = {
         {n = G.UIT.T, config = {align = "cm", colour = G.C.WHITE, text = "Keybinds", scale = 0.5}}
     }}
 
-    config_nodes.nodes[1].nodes[3] = 
-    {n = G.UIT.R, config = {align = "cm", colour = G.C.CLEAR}, nodes = {
-        {n = G.UIT.B, config = {align = "cm", w = 3.9, h = 0.3}}
-    }}
+    local keybind_buttons = {}
 
-    config_nodes.nodes[1].nodes[4] =
-    {n = G.UIT.R, config = {align = "cm", colour = G.C.UI.TEXT_INACTIVE, padding = 0.2, r=0.05}, nodes = {}}
+    for _, dir in pairs({"up", "down", "left", "right", "home"}) do
+        table.insert(keybind_buttons,
+            {
+                n = G.UIT.R,
+                config = { button = "scr_" .. dir .. "_keybind", colour = G.C.RED, padding = 0.2, r = 0.1, shadow = true, hover = true },
+                nodes = {
+                    {
+                        n = G.UIT.O,
+                        config = {
+                            object = DynaText {
+                                string = dir:gsub("^%l", string.upper) .. " Keybind: " .. scr.config[dir .. "_keybind"],
+                                scale = 0.5,
+                                colours = { G.C.WHITE }
+                            }
+                        }
+                    }
+                }
+            })
+    end
 
-    config_nodes.nodes[1].nodes[4].nodes[1] =
-    {n = G.UIT.C, config = {button = "scr_up_keybind", colour = G.C.RED, padding = 0.2, r=0.1, shadow=true, hover =true}, nodes = {
-        {n = G.UIT.O, config = {object = DynaText{
-            string = "Up Keybind: "..scr.config.up_keybind,
-            scale = 0.5,
-            colours = {G.C.WHITE}
-        }}}
-    }}
+    local keybind_container = {
+        n = G.UIT.R,
+        config = {align = "cm"},
+        nodes = {
+            {n = G.UIT.C, config = {align = "cm", colour = G.C.UI.TEXT_INACTIVE, padding = 0.1, r=0.05}, nodes = keybind_buttons}
+        },
+    }
+    
 
-    config_nodes.nodes[1].nodes[4].nodes[2] =
-    {n = G.UIT.C, config = {button = "scr_down_keybind", colour = G.C.RED, padding = 0.2, r=0.1, shadow=true, hover =true}, nodes = {
-        {n = G.UIT.O, config = {object = DynaText{
-            string = "Down Keybind: "..scr.config.down_keybind,
-            scale = 0.5,
-            colours = {G.C.WHITE},
-        }}}
-    }}
-
-    config_nodes.nodes[1].nodes[4].nodes[3] =
-    {n = G.UIT.C, config = {button = "scr_left_keybind", colour = G.C.RED, padding = 0.2, r=0.1, shadow=true, hover =true}, nodes = {
-        {n = G.UIT.O, config = {object = DynaText{
-            string = "Left Keybind: "..scr.config.left_keybind,
-            scale = 0.5,
-            colours = {G.C.WHITE}
-        }}}
-    }}
-
-    config_nodes.nodes[1].nodes[4].nodes[4] =
-    {n = G.UIT.C, config = {button = "scr_right_keybind", colour = G.C.RED, padding = 0.2, r=0.1, shadow=true, hover =true}, nodes = {
-        {n = G.UIT.O, config = {object = DynaText{
-            string = "Right Keybind: "..scr.config.right_keybind,
-            scale = 0.5,
-            colours = {G.C.WHITE}
-        }}}
-    }}
-
-    config_nodes.nodes[1].nodes[4].nodes[5] =
-    {n = G.UIT.C, config = {button = "scr_home_keybind", colour = G.C.RED, padding = 0.2, r=0.1, shadow=true, hover =true}, nodes = {
-        {n = G.UIT.O, config = {object = DynaText{
-            string = "Home Keybind: "..scr.config.home_keybind,
-            scale = 0.5,
-            colours = {G.C.WHITE}
-        }}}
-    }}
-
-    config_nodes.nodes[1].nodes[5] =
-    {n = G.UIT.C, config = {padding = 0.05}, nodes = {
+    local requires_restart_dynatext = {n = G.UIT.R, config = {padding = 0.05, align = "cm"}, nodes = {
         {n = G.UIT.O, config = {object = DynaText{
             string = {{
                 ref_table = SCR,
                 ref_value = "requires_restart",
             }},
-            scale = 0.5,
+            scale = 0.35,
             colours = {SCR.important},
             align = "cm",
+            maxw = 4,
         }}}
     }}
+
+    local config_nodes = {n=G.UIT.ROOT, config = {align = "cm", colour = G.C.L_BLACK, minw = 4, minh = 4}, nodes = {
+        {n = G.UIT.C, config = {align = "cm"}, nodes = {
+            slider,
+            keybinds_text,
+            keybind_container,
+            requires_restart_dynatext,
+        }}
+    }}
+
     return config_nodes
 end
 
@@ -215,7 +218,7 @@ SMODS.Keybind {
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
-        if hovered then move_popup(hovered, {x=0,y=0 - scr.config.move_distance / 10}) end
+        if hovered then move_popup(hovered, {x=0,y=0 - scr.config.move_distance}) end
     end
 }
 
@@ -224,7 +227,7 @@ SMODS.Keybind {
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
-        if hovered then move_popup(hovered, {x=0,y=scr.config.move_distance / 10}) end
+        if hovered then move_popup(hovered, {x=0,y=scr.config.move_distance}) end
     end
 }
 
@@ -233,7 +236,7 @@ SMODS.Keybind {
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
-        if hovered then move_popup(hovered, {x=0 - scr.config.move_distance / 10,y=0}) end
+        if hovered then move_popup(hovered, {x=0 - scr.config.move_distance,y=0}) end
     end
 }
 
@@ -242,7 +245,7 @@ SMODS.Keybind {
     event = "pressed",
     action = function(self) 
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
-        if hovered then move_popup(hovered, {x=scr.config.move_distance / 10,y=0}) end
+        if hovered then move_popup(hovered, {x=scr.config.move_distance,y=0}) end
     end
 }
 
@@ -250,7 +253,14 @@ SMODS.Keybind {
     key_pressed = scr.config.home_keybind:lower(),
     action = function(self)
         local hovered = G and G.CONTROLLER and (G.CONTROLLER.focused.target or G.CONTROLLER.hovering.target)
-        if hovered then hovered.scr = {x=0,y=0} end
+        if not hovered then return end
+
+        hovered.scr = hovered.scr or {x=0,y=0} -- ensure it exists first
+
+        move_popup(hovered, {
+            x = -hovered.scr.x,
+            y = -hovered.scr.y
+        }) -- this just negates it back to 0
     end
 }
 
